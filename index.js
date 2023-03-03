@@ -56,16 +56,16 @@ app.post("/mobileData/signup",express.json(),async function(request,response){
   console.log(userFromDB);
   if(userFromDB){
     response.status(401).send({message:"Already exists"})
-  }else{
-    const hashedPassword = await generateHashedPassword(password)
+  }else if(password.length<8){
+  response.send({message:"Your password is weak"})
+  }else{  const hashedPassword = await generateHashedPassword(password)
     const result = await client.db("MobilePhones").collection("signUpData").insertOne({
       username:username,
       email:email,
       password:hashedPassword
     });
     console.log(hashedPassword);
-    response.status(200).send(result)
-  }
+    response.status(200).send(result)}
  
 })
 
@@ -75,11 +75,11 @@ app.post("/mobileData/login",express.json(),async function(request,response){
   if(!userFromDB){
     response.status(401).send({message:"Invalid credentials"})
   }else{
-    //compare password
+    //*compare password
     const storePassword = userFromDB.password;
-    //bcrypt inbuilt comparison method
+    //*bcrypt inbuilt comparison method
     const passwordCheck = await bcrypt.compare(password,storePassword)
-   console.log(passwordCheck);
+  //  console.log(passwordCheck);
    if(passwordCheck ==true){
      response.status(200).send({
       message:"Logged in successfully"
