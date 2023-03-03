@@ -75,14 +75,18 @@ app.post("/mobileData/login",express.json(),async function(request,response){
   if(!userFromDB){
     response.status(401).send({message:"Invalid credentials"})
   }else{
-    const result  = await client.db("MobilePhones").collection("signUpData").findOne({
-      username:username,
-      email:email,
-      password:password
-    })
-    response.status(200).send({
+    //compare password
+    const storePassword = userFromDB.password;
+    //bcrypt inbuilt comparison method
+    const passwordCheck = await bcrypt.compare(password,storePassword)
+   console.log(passwordCheck);
+   if(passwordCheck ==true){
+     response.status(200).send({
       message:"Logged in successfully"
     })
+   }else{
+    response.status(401).send({message:"Invalid credentials"})
+   }
   }
   
 })
