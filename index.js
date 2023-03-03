@@ -3,12 +3,16 @@ import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express"; // "type": "module"
 import CORS from "cors";
+import {auth} from "./auth middleware/auth.js"
 import { MongoClient } from "mongodb";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"
+
 const app = express();
 
 const PORT = process.env.PORT;
 app.use(CORS());
+app.use(auth);
 const MONGO_URL = process.env.MONGO_URL;
 const client = new MongoClient(MONGO_URL); // dial
 // Top level await
@@ -18,7 +22,7 @@ console.log("Mongo is connected !!!  ");
 //   response.send("🙋‍♂️, 🌏 🎊✨🤩");
 // });
 
-app.get("/mobileData", async function (request, response) {
+app.get("/mobileData", auth,async function (request, response) {
   const getData = await client
     .db("MobilePhones")
     .collection("Mobile")
@@ -97,11 +101,14 @@ app.post(
       const passwordCheck = await bcrypt.compare(password, storePassword);
       //  console.log(passwordCheck);
       if (passwordCheck == true) {
+        const token = jwt.sign({id:userFromDB._id},process.env.SECRET_KEY)
         response.status(200).send({
           message: "Logged in successfully",
+          token:token
         });
+        
       } else {
-        response.status(401).send({ message: "Invalid credentials" });
+        response.status(401).send({ message: "Invalid credentials"});
       }
     }
   }
