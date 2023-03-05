@@ -12,15 +12,15 @@ const app = express();
 
 const PORT = process.env.PORT;
 app.use(CORS());
-app.use(auth);
+
 const MONGO_URL = process.env.MONGO_URL;
 const client = new MongoClient(MONGO_URL); // dial
 // Top level await
 await client.connect(); // call
 console.log("Mongo is connected !!!  ");
-// app.get("/", function (request, response) {
-//   response.send("🙋‍♂️, 🌏 🎊✨🤩");
-// });
+app.get("/", function (request, response) {
+  response.send("🙋‍♂️, 🌏 🎊✨🤩");
+});
 
 app.get("/mobileData", auth,async function (request, response) {
   const getData = await client
