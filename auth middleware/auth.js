@@ -6,6 +6,6 @@ export const auth = (request, response, next) => {
     jwt.verify(token, process.env.SECRET_KEY);
     next();
   } catch {
-    response.status(401).send({ message: "no allowed" });
+    response.status(401).send({ message: "not allowed" });
   }
 };
