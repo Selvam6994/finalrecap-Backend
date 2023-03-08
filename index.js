@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express"; // "type": "module"
 import CORS from "cors";
-import { auth } from "./auth middleware/auth.js";
+import { auth,authotp } from "./auth middleware/auth.js";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -134,42 +134,79 @@ app.post(
           email: email,
           otp: otp,
         });
-          // Generate test SMTP service account from ethereal.email
-          // Only needed if you don't have a real mail account for testing
-        
-          // create reusable transporter object using the default SMTP transport
-          let transporter = nodeMailer.createTransport({
-            service:"gmail",
-            auth: {
-              user: "selvamyoor@gmail.com",// generated ethereal user
-              pass:process.env.APP_PASSWORD, // generated ethereal password
-            },
-          });
-        
-          // send mail with defined transport object
-          let info = {
-            from: 'selvamyoor@gmail.com', // sender address
-            to: email, // list of receivers
-            subject: "Reset the password", // Subject line
-            text: "Use this code to rest the password "+ otp, // plain text body
-          };
-          transporter.sendMail(info,(err)=>{
-            if(err){
-              console.log("error",err);
-            }else {
-              console.log("email sent successfully");
-            }
-          })
-        
-        
-    
-     
+
+      let transporter = nodeMailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "selvamyoor@gmail.com",
+          pass: process.env.APP_PASSWORD,
+        },
+      });
+
+      let info = {
+        from: "selvamyoor@gmail.com",
+        to: email,
+        subject: "Reset the password",
+        text: "Use this code to rest the password " + otp,
+      };
+      transporter.sendMail(info, (err) => {
+        if (err) {
+          console.log("error", err);
+        } else {
+          console.log("email sent successfully");
+        }
+      });
+
+      // setTimeout(async () => {
+      //   const deleteOTP = await client
+      //     .db("MobilePhones")
+      //     .collection("resetPassword")
+      //     .deleteOne({
+      //       email: email,
+      //       otp: otp,
+      //     });
+      // }, 60000);
+
       response.send({ result });
     } else {
       response.status(401).send({ message: "invalid credentials" });
     }
   }
 );
+
+app.post("/mobileData/otp", express.json(), async function (request, response) {
+  const { email, otp } = await request.body;
+  const validUser = await client
+    .db("MobilePhones")
+    .collection("resetPassword")
+    .findOne({ otp: otp });
+  if (!validUser) {
+    response.status(401).send({ message: "otp does not match" });
+  } else {
+    const token = jwt.sign({ otp: validUser.otp }, process.env.SECRET_KEY);
+    response.status(200).send({
+      message: "Logged in successfully",
+      token: token,
+    });
+  }
+});
+
+app.post("/mobileData/updatePassword",express.json(), authotp, async function (request, response) {
+  const data = await request.body;
+  const result = await client
+    .db("MobilePhones")
+    .collection("signUpData")
+    .updateOne({
+      password: password
+    },{$set:data});
+    response.send(result)
+});
+// const { otpCode } = await request.body;
+//       const verifyOTP = await client
+//         .db("MobilePhones")
+//         .collection("signUpData")
+//         .findOne({ otp: otpCode });
+// console.log(verifyOTP);
 
 app.get("/mobileData/resetPassword", async function (request, response) {
   const data = await client
