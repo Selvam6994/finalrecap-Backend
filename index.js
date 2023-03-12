@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express"; // "type": "module"
 import CORS from "cors";
-import { auth,authotp } from "./auth middleware/auth.js";
+import { auth, authotp } from "./auth middleware/auth.js";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -157,15 +157,15 @@ app.post(
         }
       });
 
-      // setTimeout(async () => {
-      //   const deleteOTP = await client
-      //     .db("MobilePhones")
-      //     .collection("resetPassword")
-      //     .deleteOne({
-      //       email: email,
-      //       otp: otp,
-      //     });
-      // }, 60000);
+      setTimeout(async () => {
+        const deleteOTP = await client
+          .db("MobilePhones")
+          .collection("resetPassword")
+          .deleteOne({
+            email: email,
+            otp: otp,
+          });
+      }, 20000);
 
       response.send({ result });
     } else {
@@ -191,23 +191,25 @@ app.post("/mobileData/otp", express.json(), async function (request, response) {
   }
 });
 
-app.post("/mobileData/updatePassword",express.json(), authotp, async function (request, response) {
-  const data = await request.body;
-  const result = await client
-    .db("MobilePhones")
-    .collection("signUpData")
-    .updateOne({
-      password: password
-    },{$set:data});
-    response.send(result)
-});
-// const { otpCode } = await request.body;
-//       const verifyOTP = await client
-//         .db("MobilePhones")
-//         .collection("signUpData")
-//         .findOne({ otp: otpCode });
-// console.log(verifyOTP);
+app.put(
+  "/mobileData/:email",authotp,
+  express.json(),
+  async function (request, response) {
+    const { email } = request.params;
+    const {newpassword,  password } = await request.body;
+    const hashedPassword = await generateHashedPassword(password);
+    const result = await client
+      .db("MobilePhones")
+      .collection("signUpData")
+      .updateOne(
+        { email: email },
+        { $set: { password: hashedPassword } }
+      );
+    response.send(result);
+  }
+);
 
+//
 app.get("/mobileData/resetPassword", async function (request, response) {
   const data = await client
     .db("MobilePhones")
