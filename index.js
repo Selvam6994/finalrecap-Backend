@@ -192,19 +192,17 @@ app.post("/mobileData/otp", express.json(), async function (request, response) {
 });
 
 app.put(
-  "/mobileData/:email",authotp,
+  "/mobileData/:email",
+  authotp,
   express.json(),
   async function (request, response) {
     const { email } = request.params;
-    const {newpassword,  password } = await request.body;
+    const { newpassword, password } = await request.body;
     const hashedPassword = await generateHashedPassword(password);
     const result = await client
       .db("MobilePhones")
       .collection("signUpData")
-      .updateOne(
-        { email: email },
-        { $set: { password: hashedPassword } }
-      );
+      .updateOne({ email: email }, { $set: { password: hashedPassword } });
     response.send(result);
   }
 );
